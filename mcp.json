@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "cursor-async-agent": {
+      "command": "node",
+      "args": ["dist/index.js"]
+    }
+  }
+}

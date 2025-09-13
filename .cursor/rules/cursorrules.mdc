@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+# Hands-Free Rules (Accessibility First)
+
+- Voice-only user. Minimize questions.
+- Auto-store key context to RAG. Auto-retrieve before asking anything.
+- Never block waiting for typing.
+- Respect privacy: don’t exfiltrate code/secrets; redact by default.
