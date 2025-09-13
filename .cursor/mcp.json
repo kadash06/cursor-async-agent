@@ -1,0 +1,15 @@
+{
+	"mcpServers": {
+		"cursor-async-agent": {
+			"command": "node",
+			"args": ["dist/index.js"]
+		},
+		"cursor-async-agent:dev": {
+			"command": "npx",
+			"args": ["tsx", "src/index.ts"],
+			"env": {
+				"MCP_TRANSPORT_TYPE": "stdio"
+			}
+		}
+	}
+}
