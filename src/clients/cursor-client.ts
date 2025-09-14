@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import { getConfig } from "./config.js";
+import { getConfig } from "../config/config.js";
 
 export interface Agent {
   id: string;

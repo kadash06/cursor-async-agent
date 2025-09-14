@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { cursorClient } from "./cursor-client.js";
-import { getConfig } from "./config.js";
+import { cursorClient } from "../clients/cursor-client.js";
+import { getConfig } from "../config/config.js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { z } from "zod";
@@ -166,29 +166,29 @@ server.resource(
     try {
       // Read and combine the API documentation files
       const overview = readFileSync(
-        join(process.cwd(), "cursor-api-doc/overview.md"),
+        join(process.cwd(), "docs/cursor-api/overview.md"),
         "utf-8"
       );
       const agentInfo = readFileSync(
         join(
           process.cwd(),
-          "cursor-api-doc/api-endpoints/agent-informations.md"
+          "docs/cursor-api/api-endpoints/agent-informations.md"
         ),
         "utf-8"
       );
       const agentManagement = readFileSync(
-        join(process.cwd(), "cursor-api-doc/api-endpoints/agent-management.md"),
+        join(process.cwd(), "docs/cursor-api/api-endpoints/agent-management.md"),
         "utf-8"
       );
       const generalEndpoints = readFileSync(
         join(
           process.cwd(),
-          "cursor-api-doc/api-endpoints/general-endpoints.md"
+          "docs/cursor-api/api-endpoints/general-endpoints.md"
         ),
         "utf-8"
       );
       const webhook = readFileSync(
-        join(process.cwd(), "cursor-api-doc/webhook.md"),
+        join(process.cwd(), "docs/cursor-api/webhook.md"),
         "utf-8"
       );
 

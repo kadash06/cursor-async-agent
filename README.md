@@ -9,6 +9,31 @@ A Model Context Protocol (MCP) server that provides access to Cursor's Backgroun
 - **Resource Access**: Read Cursor API documentation directly within MCP clients
 - **Environment Validation**: Robust configuration validation with helpful error messages
 
+## Project Structure
+
+```
+cursor-async-agent/
+├── bin/                    # Binary files (zrok.exe)
+├── docs/
+│   └── cursor-api/         # Moved from cursor-api-doc/
+├── scripts/                # Helper scripts
+│   ├── ci/                 # CI/CD scripts
+│   └── maintenance/        # Maintenance utilities
+├── src/                    # Source code
+│   ├── clients/           # API clients
+│   ├── config/            # Configuration
+│   ├── mcp/               # MCP server implementation
+│   └── webhook/           # Webhook server
+├── tests/                  # Test files
+│   ├── e2e/               # End-to-end tests
+│   ├── integration/       # Integration tests
+│   └── smoke/             # Smoke tests
+├── logs/                   # Webhook logs (JSONL files)
+├── dist/                   # Build output
+├── .cursor/                # Cursor configuration
+└── mcp.json               # MCP configuration
+```
+
 ## Prerequisites
 
 - Node.js 18+ with ES modules support
@@ -130,7 +155,7 @@ To receive webhook notifications from Cursor:
 2. Run the setup script to create a tunnel:
 
    ```powershell
-   .\setup-zrok.ps1
+   .\scripts\setup-zrok.ps1
    ```
 
    Or manually:

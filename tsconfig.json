@@ -8,11 +8,18 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./",
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "paths": {
+      "@config/*": ["src/config/*"],
+      "@clients/*": ["src/clients/*"],
+      "@mcp/*": ["src/mcp/*"],
+      "@webhook/*": ["src/webhook/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

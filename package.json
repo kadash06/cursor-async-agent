@@ -8,7 +8,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx --watch src/index.ts",
-    "test": "node test-smoke.js"
+    "test": "node tests/smoke/test-smoke.js",
+    "test:smoke": "node tests/smoke/test-smoke.js",
+    "test:integration": "node tests/integration/test-agent.js",
+    "test:e2e": "node tests/e2e/test-e2e-full.js"
   },
   "keywords": [
     "mcp",

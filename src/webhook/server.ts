@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { getConfig } from "./config.js";
+import { getConfig } from "../config/config.js";
 import { createWriteStream, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import crypto from "crypto";

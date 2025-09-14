@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { getConfig } from "./config.js";
-import { startMcpServer } from "./mcp-server.js";
-import { WebhookServer } from "./webhook-server.js";
+import { getConfig } from "./config/config.js";
+import { startMcpServer } from "./mcp/server.js";
+import { WebhookServer } from "./webhook/server.js";
 
 // Validate configuration on startup
 const config = getConfig();
