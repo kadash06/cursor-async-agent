@@ -9,6 +9,7 @@ async function testMcpServer() {
 
     let output = "";
     let errorOutput = "";
+    let serverExited = false;
 
     serverProcess.stdout.on("data", (data) => {
       output += data.toString();
@@ -18,23 +19,41 @@ async function testMcpServer() {
       errorOutput += data.toString();
     });
 
+    serverProcess.on("exit", (code) => {
+      serverExited = true;
+      if (code !== 0) {
+        console.log("Server stderr:", errorOutput.trim());
+        console.log("❌ Smoke test FAILED: Server exited with code", code);
+        reject(new Error(`Server exited with code ${code}`));
+      }
+    });
+
     // Send tools/list request after a short delay
     setTimeout(() => {
-      const listToolsRequest = {
-        jsonrpc: "2.0",
-        id: 1,
-        method: "tools/list",
-        params: {},
-      };
+      if (!serverExited) {
+        const listToolsRequest = {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/list",
+          params: {},
+        };
 
-      serverProcess.stdin.write(JSON.stringify(listToolsRequest) + "\n");
+        try {
+          serverProcess.stdin.write(JSON.stringify(listToolsRequest) + "\n");
+        } catch (error) {
+          console.log("❌ Smoke test FAILED: Could not send request to server");
+          reject(error);
+        }
+      }
     }, 1000);
 
     // Wait for response or timeout
     setTimeout(() => {
-      serverProcess.kill();
+      if (!serverExited) {
+        serverProcess.kill();
+      }
 
-      console.log("Server stderr:", errorOutput);
+      console.log("Server stderr:", errorOutput.trim());
 
       if (
         output.includes("cursor_me") &&
@@ -45,8 +64,8 @@ async function testMcpServer() {
         resolve(true);
       } else {
         console.log("❌ Smoke test FAILED: Expected tools not found");
-        console.log("Output:", output);
-        reject(new Error("Tools not found"));
+        console.log("Output:", output.trim());
+        reject(new Error("Expected tools not found in server output"));
       }
     }, 3000);
 
@@ -57,4 +76,7 @@ async function testMcpServer() {
   });
 }
 
-testMcpServer().catch(console.error);
+testMcpServer().catch((error) => {
+  console.error("Test failed:", error.message);
+  process.exit(1);
+});

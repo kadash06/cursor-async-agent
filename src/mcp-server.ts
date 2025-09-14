@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { cursorClient } from "./cursor-client.js";
-import { getConfig } from "./config.js";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { z } from "zod";
