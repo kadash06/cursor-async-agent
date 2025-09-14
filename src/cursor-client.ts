@@ -18,6 +18,12 @@ export interface Agent {
   createdAt: string;
 }
 
+export interface AgentPhase {
+  phase: "initial" | "review";
+  parentAgentId?: string; // For review phase, track the original
+  reviewFeedback?: string;
+}
+
 export interface LaunchAgentRequest {
   prompt: {
     text: string;
@@ -36,6 +42,16 @@ export interface LaunchAgentRequest {
   webhook?: {
     url: string;
     secret?: string;
+  };
+  target?: {
+    autoCreatePr?: boolean;
+    branchName?: string;
+  };
+  model?: string;
+  metadata?: {
+    phase: AgentPhase;
+    prNumber?: number;
+    previousBranch?: string;
   };
 }
 
@@ -61,6 +77,12 @@ export interface ApiKeyInfo {
   userEmail?: string;
 }
 
+function randomHex(n: number = 4): string {
+  return Math.floor(Math.random() * 0xffff)
+    .toString(16)
+    .padStart(n, "0");
+}
+
 export class CursorClient {
   private client: AxiosInstance;
 
@@ -71,7 +93,9 @@ export class CursorClient {
       headers: {
         Authorization: `Bearer ${config.CURSOR_API_KEY}`,
         "Content-Type": "application/json",
+        "User-Agent": "cursor-async-agent",
       },
+      timeout: 15000,
     });
   }
 
@@ -98,9 +122,97 @@ export class CursorClient {
   }
 
   async launchAgent(request: LaunchAgentRequest): Promise<LaunchAgentResponse> {
-    const response = await this.client.post("/agents", request);
+    // Always enforce autoCreatePr: true
+    const req: LaunchAgentRequest = {
+      ...request,
+      target: {
+        ...(request.target || {}),
+        autoCreatePr: true,
+      },
+    };
+
+    // Print payload (redact secret)
+    const sanitized = {
+      ...req,
+      webhook: req.webhook
+        ? {
+            url: req.webhook.url,
+            secret: req.webhook.secret ? "***redacted***" : undefined,
+          }
+        : undefined,
+    };
+    console.error(
+      "[POST /agents] Payload:\n" + JSON.stringify(sanitized, null, 2)
+    );
+    const response = await this.client.post("/agents", req);
+    return response.data;
+  }
+
+  async launchAgentWithDefaults(args: {
+    promptText: string;
+    repository: string;
+    ref?: string;
+    images?: LaunchAgentRequest["prompt"]["images"];
+    branchNameSlug?: string;
+  }): Promise<LaunchAgentResponse> {
+    const cfg = getConfig();
+    const finalBranch =
+      cfg.AGENT_TARGET_BRANCH ||
+      (args.branchNameSlug
+        ? `${args.branchNameSlug}-${randomHex()}`
+        : `feat/agent-${randomHex()}`);
+    const finalWebhookUrl = cfg.ZROK_SHARE_URL
+      ? `${cfg.ZROK_SHARE_URL}/webhook`
+      : undefined;
+    const finalWebhookSecret = cfg.WEBHOOK_SECRET;
+
+    const request: LaunchAgentRequest = {
+      prompt: { text: args.promptText, images: args.images },
+      source: { repository: args.repository, ref: args.ref || "main" },
+      model: cfg.CURSOR_MODEL || "grok-code-fast-1",
+      target: {
+        autoCreatePr: true,
+        branchName: finalBranch,
+      },
+      webhook: finalWebhookUrl
+        ? { url: finalWebhookUrl, secret: finalWebhookSecret }
+        : undefined,
+    };
+    return this.launchAgent(request);
+  }
+
+  async getAgent(id: string): Promise<Agent> {
+    const response = await this.client.get(`/agents/${encodeURIComponent(id)}`);
+    return response.data;
+  }
+
+  async sendFollowup(
+    agentId: string,
+    prompt: {
+      text: string;
+      images?: Array<{
+        data: string;
+        dimension: {
+          width: number;
+          height: number;
+        };
+      }>;
+    }
+  ): Promise<{ id: string }> {
+    console.error(`[POST /agents/${agentId}/followup] Sending followup...`);
+
+    const response = await this.client.post(
+      `/agents/${encodeURIComponent(agentId)}/followup`,
+      { prompt }
+    );
     return response.data;
   }
 }
 
-export const cursorClient = new CursorClient();
+let singletonClient: CursorClient | null = null;
+export function getCursorClient(): CursorClient {
+  if (!singletonClient) {
+    singletonClient = new CursorClient();
+  }
+  return singletonClient;
+}

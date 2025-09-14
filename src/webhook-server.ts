@@ -3,7 +3,8 @@ import { serve } from "@hono/node-server";
 import { getConfig } from "./config.js";
 import { createWriteStream, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-import crypto from "crypto";
+import { agentState } from "./agent-state.js";
+import { verify } from "@octokit/webhooks-methods";
 
 interface WebhookPayload {
   event: string;
@@ -53,17 +54,17 @@ export class WebhookServer {
     this.app.post("/webhook", async (c) => {
       try {
         const config = getConfig();
-        const signature = c.req.header("X-Webhook-Signature");
+        const signature = c.req.header("X-Webhook-Signature") || "";
         const rawBody = await c.req.text();
 
         // Verify webhook signature if secret is configured
-        if (config.ZROK_SHARE_URL && signature) {
-          const expectedSignature = `sha256=${crypto
-            .createHmac("sha256", config.ZROK_SHARE_URL)
-            .update(rawBody)
-            .digest("hex")}`;
-
-          if (signature !== expectedSignature) {
+        if (config.WEBHOOK_SECRET) {
+          if (!signature) {
+            console.error("Missing webhook signature");
+            return c.text("Invalid signature", 401);
+          }
+          const ok = await verify(config.WEBHOOK_SECRET, rawBody, signature);
+          if (!ok) {
             console.error("Invalid webhook signature");
             return c.text("Invalid signature", 401);
           }
@@ -79,9 +80,17 @@ export class WebhookServer {
           }) + "\n"
         );
 
-        console.log(
+        console.error(
           `Webhook received for agent ${payload.id}: ${payload.status}`
         );
+
+        // Sync PR URL into local state if present
+        if (payload?.target?.prUrl) {
+          agentState.setFinalPrUrl(payload.id, payload.target.prUrl);
+        }
+
+        // If PR URL is available, this is where we could post back to GitHub
+        // with a status comment. Keeping it minimal for now per request.
 
         return c.text("OK");
       } catch (error) {
@@ -91,8 +100,8 @@ export class WebhookServer {
     });
   }
 
-  start(port: number = 3000) {
-    console.log(`Starting webhook server on port ${port}`);
+  start(port: number = 8787) {
+    console.error(`Starting webhook server on port ${port}`);
     serve({
       fetch: this.app.fetch,
       port,
